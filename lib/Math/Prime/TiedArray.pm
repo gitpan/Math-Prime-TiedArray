@@ -16,7 +16,7 @@ Version 0.01
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -39,7 +39,7 @@ Allows access to an array of prime numbers, that will be extended as-needed:
     print $primes[199];
 
     # print all the primes smaller than 500
-    while (my $prime = shift @primes < 500) {
+    while ((my $prime = shift @primes) < 500) {
       print "$prime, ";
     }
 
