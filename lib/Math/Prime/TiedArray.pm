@@ -12,11 +12,11 @@ Math::Prime::TiedArray - Simulate an infinite array of prime numbers
 
 =head1 VERSION
 
-Version 0.01
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 SYNOPSIS
 
@@ -72,6 +72,7 @@ prime larger than the ceiling.
 
     Output debug messages:
     0 - none
+    1 - progress updates for atkin
     2 - prime calculations
     3 - tie API
     4 - internal progress for atkin
@@ -97,11 +98,11 @@ sub FETCH {
     my ( $self, $idx ) = @_;
     warn "FETCH(@_)\n" if $self->{_options}{debug} > 2;
 
-    if ( $idx+1 > $self->{_cache_size} ) {
-        $self->EXTEND($idx+1);
+    if ( $idx + 1 > $self->{_cache_size} ) {
+        $self->EXTEND( $idx + 1 );
     }
 
-    return $self->{_cache}[$idx+1];
+    return $self->{_cache}[ $idx + 1 ];
 }
 
 # report how many primes have been calculated (scalar @array)
@@ -152,7 +153,8 @@ sub DESTROY {
     warn "DESTROY(@_)\n" if $self->{_options}{debug} > 2;
 
     if ( $self->{_options}{cache} ) {
-        untie $self->{_cache} or carp "Failed to untie $self->{_options}{cache}: $!";
+        untie $self->{_cache}
+          or carp "Failed to untie $self->{_options}{cache}: $!";
     }
 }
 
@@ -274,11 +276,22 @@ sub _atkin {
       and $limit > $self->{_options}{extend_ceiling};
 
     # put in candidate primes:
-    # integers which have an odd number of representations by certain quadratic
-    # forms
+    # integers which have an odd number of representations by certain
+    # quadratic forms
 
-    foreach my $x ( 1 .. sqrt($limit) ) {
-        foreach my $y ( 1 .. sqrt($limit) ) {
+    my $sqrt     = sqrt($limit);
+    my $progress = 0;
+    foreach my $x ( 1 .. $sqrt ) {
+        if ( $self->{_options}{debug} > 0 ) {
+            my $x_p = int( $x / $sqrt * 100 / 3 );
+            if ( $x_p > $progress ) {
+                warn sprintf "DEBUG1: ($limit) %d%%\n", $x_p;
+                $progress = $x_p;
+            }
+        }
+
+        foreach my $y ( 1 .. $sqrt ) {
+
             warn "DEBUG4: $x, $y\n" if $self->{_options}{debug} > 3;
             my $n = 3 * $x**2 - $y**2;
             if (    $n > $self->{_max_prime}
@@ -305,7 +318,15 @@ sub _atkin {
     }
 
     # eliminate composites by sieving
-    foreach my $n ( 5 .. sqrt($limit) ) {
+    foreach my $n ( 5 .. $sqrt ) {
+        if ( $self->{_options}{debug} > 0 ) {
+            my $x_p = 33 + int( $n / $sqrt * 100 / 3 );
+            if ( $x_p > $progress ) {
+                warn sprintf "DEBUG1: ($limit) %d%%\n", $x_p;
+                $progress = $x_p;
+            }
+        }
+
         next unless $self->{_sieve}{$n};
         warn "DEBUG4: eliminating multiples of $n**2\n"
           if $self->{_options}{debug} > 3;
@@ -321,6 +342,14 @@ sub _atkin {
 
     # save the found primes in our cache
     foreach my $n ( 5 .. $limit ) {
+        if ( $self->{_options}{debug} > 0 ) {
+            my $x_p = 66 + int( $n / $limit * 100 / 3 );
+            if ( $x_p > $progress ) {
+                warn sprintf "DEBUG1: ($limit) %d%%\n", $x_p;
+                $progress = $x_p;
+            }
+        }
+
         next unless $n > $self->{_max_prime} and $self->{_sieve}{$n};
         warn "DEBUG3: caching new prime $n\n" if $self->{_options}{debug} > 2;
         push @{ $self->{_cache} }, $n;
