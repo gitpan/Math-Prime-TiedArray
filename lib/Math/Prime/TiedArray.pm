@@ -12,11 +12,11 @@ Math::Prime::TiedArray - Simulate an infinite array of prime numbers
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 =head1 SYNOPSIS
 
@@ -331,17 +331,16 @@ sub _atkin {
         warn "DEBUG4: eliminating multiples of $n**2\n"
           if $self->{_options}{debug} > 3;
 
-        my $k = 0;
+        my $k = int($self->{_max_prime}/$n**2) * $n**2;
         while ( $k <= $limit ) {
-            $k += $n**2;
-            next if $k < $self->{_max_prime};
             $self->{_sieve}{$k} = 0;
+            $k += $n**2;
         }
         warn "DEBUG4: done\n" if $self->{_options}{debug} > 3;
     }
 
     # save the found primes in our cache
-    foreach my $n ( 5 .. $limit ) {
+    foreach my $n ( 1+$self->{_max_prime} .. $limit ) {
         if ( $self->{_options}{debug} > 0 ) {
             my $x_p = 66 + int( $n / $limit * 100 / 3 );
             if ( $x_p > $progress ) {
@@ -350,7 +349,7 @@ sub _atkin {
             }
         }
 
-        next unless $n > $self->{_max_prime} and $self->{_sieve}{$n};
+        next unless $self->{_sieve}{$n};
         warn "DEBUG3: caching new prime $n\n" if $self->{_options}{debug} > 2;
         push @{ $self->{_cache} }, $n;
     }
